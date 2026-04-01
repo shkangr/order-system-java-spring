@@ -25,33 +25,27 @@ public class OrderService {
     private final SlackNotificationService slackNotificationService;
 
     /**
-     * 주문 생성
-     * - 재고 차감은 OrderItem.createOrderItem() 내부에서 처리
-     * - cascade = ALL 이므로 Order 저장 시 OrderItem도 함께 저장
+     * Create order
+     * - Stock deduction handled inside OrderItem.createOrderItem()
+     * - cascade = ALL, so OrderItems are saved with Order
      */
     @Transactional
     public Long createOrder(CreateOrderRequest request) {
-        // 회원 조회
         Member member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다. id=" + request.getMemberId()));
+                .orElseThrow(() -> new EntityNotFoundException("Member not found. id=" + request.getMemberId()));
 
-        // 주문 아이템 생성
         List<OrderItem> orderItems = new ArrayList<>();
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
             Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 상품입니다. id=" + itemRequest.getProductId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Product not found. id=" + itemRequest.getProductId()));
 
             OrderItem orderItem = OrderItem.createOrderItem(product, product.getPrice(), itemRequest.getCount());
             orderItems.add(orderItem);
         }
 
-        // 주문 생성 (연관관계 편의 메서드 동작)
         Order order = Order.createOrder(member, orderItems);
-
-        // 저장 (cascade로 OrderItem도 함께 저장)
         orderRepository.save(order);
 
-        // 비동기 Slack 알림 (별도 스레드)
         slackNotificationService.sendOrderCreatedMessage(
                 order.getId(), member.getName(), order.getTotalPrice());
 
@@ -59,33 +53,32 @@ public class OrderService {
     }
 
     /**
-     * 주문 취소
-     * - 재고 복구는 OrderItem.cancel() 내부에서 처리
+     * Cancel order
+     * - Stock restoration handled inside OrderItem.cancel()
      */
     @Transactional
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findWithAllById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 주문입니다. id=" + orderId));
+                .orElseThrow(() -> new EntityNotFoundException("Order not found. id=" + orderId));
 
         order.cancel();
 
-        // 비동기 Slack 알림 (별도 스레드)
         slackNotificationService.sendOrderCancelledMessage(
                 order.getId(), order.getMember().getName());
     }
 
     /**
-     * 단건 주문 조회 - fetch join으로 N+1 해결
+     * Find single order - fetch join to solve N+1
      */
     public OrderResponse findOrder(Long orderId) {
         Order order = orderRepository.findWithAllById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 주문입니다. id=" + orderId));
+                .orElseThrow(() -> new EntityNotFoundException("Order not found. id=" + orderId));
 
         return new OrderResponse(order);
     }
 
     /**
-     * 전체 주문 조회 - fetch join으로 N+1 해결
+     * Find all orders - fetch join to solve N+1
      */
     public List<OrderResponse> findAllOrders() {
         return orderRepository.findAllWithMemberAndOrderItems().stream()
@@ -94,7 +87,7 @@ public class OrderService {
     }
 
     /**
-     * 특정 회원 주문 조회
+     * Find orders by member
      */
     public List<OrderResponse> findOrdersByMemberId(Long memberId) {
         return orderRepository.findAllByMemberIdWithMember(memberId).stream()

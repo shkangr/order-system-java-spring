@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders") // 'order'는 SQL 예약어이므로 'orders'로 지정
+@Table(name = "orders") // 'order' is a SQL reserved word
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
@@ -32,10 +32,9 @@ public class Order {
 
     private LocalDateTime orderDate;
 
-    // === 연관관계 편의 메서드 === //
+    // === Bidirectional Convenience Methods === //
 
     public void setMember(Member member) {
-        // 기존 관계 제거
         if (this.member != null) {
             this.member.getOrders().remove(this);
         }
@@ -50,7 +49,7 @@ public class Order {
         orderItem.assignOrder(this);
     }
 
-    // === 생성 메서드 === //
+    // === Factory Method === //
 
     public static Order createOrder(Member member, List<OrderItem> orderItems) {
         Order order = new Order();
@@ -63,14 +62,14 @@ public class Order {
         return order;
     }
 
-    // === 비즈니스 로직 === //
+    // === Business Logic === //
 
     /**
-     * 주문 취소 - 재고 복구
+     * Cancel order - restores stock
      */
     public void cancel() {
         if (this.status == OrderStatus.CANCEL) {
-            throw new IllegalStateException("이미 취소된 주문입니다.");
+            throw new IllegalStateException("Order is already cancelled.");
         }
         this.status = OrderStatus.CANCEL;
         for (OrderItem orderItem : orderItems) {
@@ -78,10 +77,10 @@ public class Order {
         }
     }
 
-    // === 조회 로직 === //
+    // === Query Logic === //
 
     /**
-     * 주문 총액 계산
+     * Calculate total price
      */
     public int getTotalPrice() {
         return orderItems.stream()

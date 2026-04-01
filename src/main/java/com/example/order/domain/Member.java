@@ -25,7 +25,7 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private List<Order> orders = new ArrayList<>();
 
-    // === 생성 메서드 === //
+    // === Factory Method === //
     public static Member createMember(String name, String email) {
         Member member = new Member();
         member.name = name;

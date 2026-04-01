@@ -27,15 +27,15 @@ public class OrderItem {
 
     private int count;
 
-    // === 패키지 내부에서만 사용 (Order.addOrderItem에서 호출) === //
+    // === Package-private: called by Order.addOrderItem() === //
     void assignOrder(Order order) {
         this.order = order;
     }
 
-    // === 생성 메서드 === //
+    // === Factory Method === //
 
     /**
-     * 주문 아이템 생성 + 재고 차감
+     * Create order item + deduct stock
      */
     public static OrderItem createOrderItem(Product product, int orderPrice, int count) {
         OrderItem orderItem = new OrderItem();
@@ -43,22 +43,21 @@ public class OrderItem {
         orderItem.orderPrice = orderPrice;
         orderItem.count = count;
 
-        // 재고 차감
         product.removeStock(count);
         return orderItem;
     }
 
-    // === 비즈니스 로직 === //
+    // === Business Logic === //
 
     /**
-     * 주문 취소 시 재고 복구
+     * Cancel - restore stock
      */
     public void cancel() {
         product.addStock(count);
     }
 
     /**
-     * 주문 아이템 총액
+     * Order item total price
      */
     public int getTotalPrice() {
         return orderPrice * count;

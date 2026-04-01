@@ -18,8 +18,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     /**
-     * 엔티티 조회 실패 (회원, 상품, 주문)
-     * → 404 Not Found
+     * Entity not found (Member, Product, Order)
+     * -> 404 Not Found
      */
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEntityNotFound(EntityNotFoundException e) {
@@ -28,8 +28,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 잘못된 요청 파라미터
-     * → 400 Bad Request
+     * Invalid request parameter
+     * -> 400 Bad Request
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
@@ -38,8 +38,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 비즈니스 규칙 위반 (재고 부족, 이미 취소된 주문)
-     * → 409 Conflict
+     * Business rule violation (not enough stock, already cancelled)
+     * -> 409 Conflict
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException e) {
@@ -48,8 +48,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * @Valid 검증 실패
-     * → 400 Bad Request + 필드별 에러 메시지
+     * @Valid validation failure
+     * -> 400 Bad Request with field-level error messages
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
@@ -63,8 +63,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 존재하지 않는 API 경로
-     * → 404 Not Found
+     * Unknown API path
+     * -> 404 Not Found
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(NoResourceFoundException e) {
@@ -73,13 +73,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 그 외 예상하지 못한 예외
-     * → 500 Internal Server Error
+     * Unexpected server error
+     * -> 500 Internal Server Error
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception e) {
         log.error("[Unhandled Exception]", e);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error.");
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {

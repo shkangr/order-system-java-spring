@@ -19,7 +19,7 @@ public class OrderController {
     private final OrderService orderService;
 
     /**
-     * 주문 생성
+     * Create order
      */
     @PostMapping
     public ResponseEntity<Long> createOrder(@Valid @RequestBody CreateOrderRequest request) {
@@ -28,7 +28,7 @@ public class OrderController {
     }
 
     /**
-     * 주문 취소
+     * Cancel order
      */
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<Void> cancelOrder(@PathVariable Long orderId) {
@@ -37,7 +37,7 @@ public class OrderController {
     }
 
     /**
-     * 단건 주문 조회
+     * Get single order
      */
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable Long orderId) {
@@ -45,7 +45,7 @@ public class OrderController {
     }
 
     /**
-     * 전체 주문 조회
+     * Get all orders
      */
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getAllOrders() {
@@ -53,7 +53,7 @@ public class OrderController {
     }
 
     /**
-     * 회원별 주문 조회
+     * Get orders by member
      */
     @GetMapping("/members/{memberId}")
     public ResponseEntity<List<OrderResponse>> getOrdersByMember(@PathVariable Long memberId) {

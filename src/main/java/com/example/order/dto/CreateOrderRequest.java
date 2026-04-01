@@ -13,21 +13,21 @@ import java.util.List;
 @NoArgsConstructor
 public class CreateOrderRequest {
 
-    @NotNull(message = "회원 ID는 필수입니다.")
+    @NotNull(message = "Member ID is required.")
     private Long memberId;
 
     @Valid
-    @Size(min = 1, message = "최소 1개 이상의 주문 아이템이 필요합니다.")
+    @Size(min = 1, message = "At least 1 order item is required.")
     private List<OrderItemRequest> orderItems;
 
     @Getter
     @NoArgsConstructor
     public static class OrderItemRequest {
 
-        @NotNull(message = "상품 ID는 필수입니다.")
+        @NotNull(message = "Product ID is required.")
         private Long productId;
 
-        @Min(value = 1, message = "주문 수량은 최소 1개 이상이어야 합니다.")
+        @Min(value = 1, message = "Order quantity must be at least 1.")
         private int count;
     }
 }

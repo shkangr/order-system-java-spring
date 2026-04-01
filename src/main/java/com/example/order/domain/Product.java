@@ -27,7 +27,7 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    // === 생성 메서드 === //
+    // === Factory Method === //
     public static Product createProduct(String name, int price, int stockQuantity) {
         Product product = new Product();
         product.name = name;
@@ -36,21 +36,21 @@ public class Product {
         return product;
     }
 
-    // === 비즈니스 로직 === //
+    // === Business Logic === //
 
     /**
-     * 재고 차감
+     * Deduct stock
      */
     public void removeStock(int quantity) {
         int restStock = this.stockQuantity - quantity;
         if (restStock < 0) {
-            throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + this.stockQuantity);
+            throw new IllegalStateException("Not enough stock. Current stock: " + this.stockQuantity);
         }
         this.stockQuantity = restStock;
     }
 
     /**
-     * 재고 복구
+     * Restore stock
      */
     public void addStock(int quantity) {
         this.stockQuantity += quantity;
