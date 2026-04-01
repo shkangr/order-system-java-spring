@@ -1,5 +1,6 @@
 package com.example.order.service;
 
+import com.example.order.config.annotation.Auditable;
 import com.example.order.domain.*;
 import com.example.order.dto.CreateOrderRequest;
 import com.example.order.dto.OrderResponse;
@@ -29,6 +30,7 @@ public class OrderService {
     /**
      * Create order with delivery and payment
      */
+    @Auditable(action = "CREATE_ORDER")
     @Transactional
     public Long createOrder(CreateOrderRequest request) {
         Member member = memberRepository.findById(request.getMemberId())
@@ -67,6 +69,7 @@ public class OrderService {
      * - Validates delivery status (cannot cancel if shipping/completed)
      * - Restores stock, cancels delivery and payment
      */
+    @Auditable(action = "CANCEL_ORDER")
     @Transactional
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findWithAllById(orderId)

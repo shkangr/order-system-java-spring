@@ -1,5 +1,6 @@
 package com.example.order.service;
 
+import com.example.order.config.annotation.Auditable;
 import com.example.order.domain.Payment;
 import com.example.order.dto.PaymentResponse;
 import com.example.order.exception.EntityNotFoundException;
@@ -15,6 +16,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
 
+    @Auditable(action = "APPROVE_PAYMENT")
     @Transactional
     public void approvePayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -22,6 +24,7 @@ public class PaymentService {
         payment.approve();
     }
 
+    @Auditable(action = "FAIL_PAYMENT")
     @Transactional
     public void failPayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)

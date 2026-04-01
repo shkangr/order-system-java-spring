@@ -1,5 +1,6 @@
 package com.example.order.service;
 
+import com.example.order.config.annotation.Auditable;
 import com.example.order.domain.Delivery;
 import com.example.order.dto.DeliveryResponse;
 import com.example.order.exception.EntityNotFoundException;
@@ -15,6 +16,7 @@ public class DeliveryService {
 
     private final DeliveryRepository deliveryRepository;
 
+    @Auditable(action = "START_SHIPPING")
     @Transactional
     public void startShipping(Long deliveryId) {
         Delivery delivery = deliveryRepository.findById(deliveryId)
@@ -22,6 +24,7 @@ public class DeliveryService {
         delivery.startShipping();
     }
 
+    @Auditable(action = "COMPLETE_DELIVERY")
     @Transactional
     public void completeDelivery(Long deliveryId) {
         Delivery delivery = deliveryRepository.findById(deliveryId)
