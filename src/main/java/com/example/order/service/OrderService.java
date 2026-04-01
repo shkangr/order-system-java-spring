@@ -21,6 +21,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MemberRepository memberRepository;
     private final ProductRepository productRepository;
+    private final SlackNotificationService slackNotificationService;
 
     /**
      * 주문 생성
@@ -49,6 +50,10 @@ public class OrderService {
         // 저장 (cascade로 OrderItem도 함께 저장)
         orderRepository.save(order);
 
+        // 비동기 Slack 알림 (별도 스레드)
+        slackNotificationService.sendOrderCreatedMessage(
+                order.getId(), member.getName(), order.getTotalPrice());
+
         return order.getId();
     }
 
@@ -62,6 +67,10 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다. id=" + orderId));
 
         order.cancel();
+
+        // 비동기 Slack 알림 (별도 스레드)
+        slackNotificationService.sendOrderCancelledMessage(
+                order.getId(), order.getMember().getName());
     }
 
     /**
