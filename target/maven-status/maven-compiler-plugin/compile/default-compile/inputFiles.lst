@@ -1,0 +1,14 @@
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/InitData.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/OrderApplication.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/controller/OrderController.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/domain/Member.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/domain/Order.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/domain/OrderItem.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/domain/OrderStatus.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/domain/Product.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/dto/CreateOrderRequest.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/dto/OrderResponse.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/repository/MemberRepository.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/repository/OrderRepository.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/repository/ProductRepository.java
+/Users/shkang/ai-proj/java-spring-boot-ad2/src/main/java/com/example/order/service/OrderService.java
