@@ -3,6 +3,7 @@ package com.example.order.service;
 import com.example.order.domain.*;
 import com.example.order.dto.CreateOrderRequest;
 import com.example.order.dto.OrderResponse;
+import com.example.order.exception.EntityNotFoundException;
 import com.example.order.repository.MemberRepository;
 import com.example.order.repository.OrderRepository;
 import com.example.order.repository.ProductRepository;
@@ -32,13 +33,13 @@ public class OrderService {
     public Long createOrder(CreateOrderRequest request) {
         // 회원 조회
         Member member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다. id=" + request.getMemberId()));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다. id=" + request.getMemberId()));
 
         // 주문 아이템 생성
         List<OrderItem> orderItems = new ArrayList<>();
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
             Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다. id=" + itemRequest.getProductId()));
+                    .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 상품입니다. id=" + itemRequest.getProductId()));
 
             OrderItem orderItem = OrderItem.createOrderItem(product, product.getPrice(), itemRequest.getCount());
             orderItems.add(orderItem);
@@ -64,7 +65,7 @@ public class OrderService {
     @Transactional
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findWithAllById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다. id=" + orderId));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 주문입니다. id=" + orderId));
 
         order.cancel();
 
@@ -78,7 +79,7 @@ public class OrderService {
      */
     public OrderResponse findOrder(Long orderId) {
         Order order = orderRepository.findWithAllById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다. id=" + orderId));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 주문입니다. id=" + orderId));
 
         return new OrderResponse(order);
     }

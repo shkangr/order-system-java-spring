@@ -81,6 +81,37 @@ If the async method throws an exception (e.g. Slack API failure), it cannot prop
 | `SlackNotificationService` | `@Async` Slack message sender |
 | `OrderService` | Calls notification after order create/cancel |
 
+### Global Exception Handler
+
+Centralized error handling with `@RestControllerAdvice`. All exceptions thrown from Controllers are caught and converted to a consistent JSON response.
+
+**Response format**
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "존재하지 않는 주문입니다. id=999",
+  "timestamp": "2026-04-01T16:00:00"
+}
+```
+
+**Exception → Status Code mapping**
+
+| Status | Exception | When |
+|--------|-----------|------|
+| 400 | `MethodArgumentNotValidException` | `@Valid` fails (null, empty, negative count) |
+| 400 | `IllegalArgumentException` | Invalid request parameter |
+| 404 | `EntityNotFoundException` (custom) | Member, Product, or Order not found |
+| 404 | `NoResourceFoundException` | Unknown API path (e.g. `GET /api/nothing`) |
+| 409 | `IllegalStateException` | Not enough stock, already cancelled order |
+| 500 | `Exception` | Unexpected server error |
+
+| File | Role |
+|------|------|
+| `GlobalExceptionHandler` | `@RestControllerAdvice` — catches and maps all exceptions |
+| `EntityNotFoundException` | Custom exception for entity lookup failures (→ 404) |
+
 ### Project Structure
 
 ```
@@ -88,6 +119,7 @@ src/main/java/com/example/order/
 ├── domain/          # Entities (Member, Product, Order, OrderItem, OrderStatus)
 ├── repository/      # Spring Data JPA + QueryDSL Fetch Join
 ├── config/          # QueryDSL config, Async thread pool config
+├── exception/       # Custom exceptions (EntityNotFoundException)
 ├── service/         # Business logic
 ├── dto/             # Request/Response DTOs
 ├── controller/      # REST API
