@@ -24,6 +24,10 @@ public class Product {
 
     private int stockQuantity;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -34,6 +38,11 @@ public class Product {
         product.price = price;
         product.stockQuantity = stockQuantity;
         return product;
+    }
+
+    // === Package-private: called by Category.addProduct() === //
+    void assignCategory(Category category) {
+        this.category = category;
     }
 
     // === Business Logic === //

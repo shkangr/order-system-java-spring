@@ -8,11 +8,10 @@ import com.example.order.repository.MemberRepository;
 import com.example.order.repository.OrderRepository;
 import com.example.order.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +27,7 @@ public class OrderService {
     private final SlackNotificationService slackNotificationService;
 
     /**
-     * Create order
-     * - Stock deduction handled inside OrderItem.createOrderItem()
-     * - cascade = ALL, so OrderItems are saved with Order
+     * Create order with delivery and payment
      */
     @Transactional
     public Long createOrder(CreateOrderRequest request) {
@@ -46,7 +43,17 @@ public class OrderService {
             orderItems.add(orderItem);
         }
 
-        Order order = Order.createOrder(member, orderItems);
+        // Create delivery
+        Address address = new Address(request.getZipCode(), request.getAddress1(), request.getAddress2());
+        Delivery delivery = Delivery.createDelivery(request.getReceiverName(), request.getPhone(), address);
+
+        // Create payment
+        PaymentMethod paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod());
+        int totalPrice = orderItems.stream().mapToInt(OrderItem::getTotalPrice).sum();
+        Payment payment = Payment.createPayment(paymentMethod, totalPrice);
+
+        // Create order (cascade saves delivery + payment)
+        Order order = Order.createOrder(member, orderItems, delivery, payment);
         orderRepository.save(order);
 
         slackNotificationService.sendOrderCreatedMessage(
@@ -57,7 +64,8 @@ public class OrderService {
 
     /**
      * Cancel order
-     * - Stock restoration handled inside OrderItem.cancel()
+     * - Validates delivery status (cannot cancel if shipping/completed)
+     * - Restores stock, cancels delivery and payment
      */
     @Transactional
     public void cancelOrder(Long orderId) {
@@ -91,8 +99,6 @@ public class OrderService {
 
     /**
      * Find orders with pagination
-     * - Member: fetch join (ToOne, safe with pagination)
-     * - OrderItems + Product: loaded via batch_fetch_size (ToMany, unsafe with pagination)
      */
     public Page<OrderResponse> findOrdersPaged(Pageable pageable) {
         return orderRepository.findAllWithMember(pageable)

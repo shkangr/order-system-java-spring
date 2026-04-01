@@ -2,6 +2,7 @@ package com.example.order.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -19,6 +20,25 @@ public class CreateOrderRequest {
     @Valid
     @Size(min = 1, message = "At least 1 order item is required.")
     private List<OrderItemRequest> orderItems;
+
+    // Delivery info
+    @NotBlank(message = "Receiver name is required.")
+    private String receiverName;
+
+    @NotBlank(message = "Phone is required.")
+    private String phone;
+
+    @NotBlank(message = "Zip code is required.")
+    private String zipCode;
+
+    @NotBlank(message = "Address1 is required.")
+    private String address1;
+
+    private String address2;
+
+    // Payment info
+    @NotNull(message = "Payment method is required.")
+    private String paymentMethod;
 
     @Getter
     @NoArgsConstructor

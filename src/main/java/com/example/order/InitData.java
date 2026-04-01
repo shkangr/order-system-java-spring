@@ -1,9 +1,7 @@
 package com.example.order;
 
-import com.example.order.domain.Member;
-import com.example.order.domain.Order;
-import com.example.order.domain.OrderItem;
-import com.example.order.domain.Product;
+import com.example.order.domain.*;
+import com.example.order.repository.CategoryRepository;
 import com.example.order.repository.MemberRepository;
 import com.example.order.repository.OrderRepository;
 import com.example.order.repository.ProductRepository;
@@ -25,6 +23,7 @@ public class InitData implements CommandLineRunner {
     private final MemberRepository memberRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final CategoryRepository categoryRepository;
 
     @Override
     @Transactional
@@ -36,12 +35,47 @@ public class InitData implements CommandLineRunner {
 
         log.info("[InitData] Seeding initial data");
 
+        List<Category> categories = seedCategories();
         List<Member> members = seedMembers();
-        List<Product> products = seedProducts();
+        List<Product> products = seedProducts(categories);
         seedOrders(members, products);
 
-        log.info("[InitData] Seed complete - {} members, {} products, 300 orders",
-                members.size(), products.size());
+        log.info("[InitData] Seed complete - {} categories, {} members, {} products, 300 orders",
+                categories.size(), members.size(), products.size());
+    }
+
+    private List<Category> seedCategories() {
+        // Root categories
+        Category laptop = Category.createCategory("Laptop");
+        Category phone = Category.createCategory("Phone");
+        Category tablet = Category.createCategory("Tablet");
+        Category wearable = Category.createCategory("Wearable");
+        Category audio = Category.createCategory("Audio");
+        Category gaming = Category.createCategory("Gaming");
+        Category monitor = Category.createCategory("Monitor");
+        Category accessory = Category.createCategory("Accessory");
+        categoryRepository.saveAll(List.of(laptop, phone, tablet, wearable, audio, gaming, monitor, accessory));
+
+        // Sub categories
+        Category appleLaptop = Category.createCategory("Apple Laptop");
+        appleLaptop.setParent(laptop);
+        Category otherLaptop = Category.createCategory("Other Laptop");
+        otherLaptop.setParent(laptop);
+
+        Category applePhone = Category.createCategory("Apple Phone");
+        applePhone.setParent(phone);
+        Category androidPhone = Category.createCategory("Android Phone");
+        androidPhone.setParent(phone);
+
+        Category keyboard = Category.createCategory("Keyboard");
+        keyboard.setParent(accessory);
+        Category mouse = Category.createCategory("Mouse & Trackpad");
+        mouse.setParent(accessory);
+
+        categoryRepository.saveAll(List.of(appleLaptop, otherLaptop, applePhone, androidPhone, keyboard, mouse));
+
+        return List.of(appleLaptop, otherLaptop, applePhone, androidPhone,
+                tablet, wearable, audio, gaming, monitor, keyboard, mouse);
     }
 
     private List<Member> seedMembers() {
@@ -61,50 +95,60 @@ public class InitData implements CommandLineRunner {
         return members;
     }
 
-    private List<Product> seedProducts() {
-        String[][] productData = {
-                {"MacBook Pro 16", "3500000", "50"},
-                {"MacBook Air 15", "1900000", "80"},
-                {"iMac 24", "2200000", "30"},
-                {"iPhone 16 Pro", "1550000", "200"},
-                {"iPhone 16", "1250000", "300"},
-                {"iPad Pro", "1730000", "100"},
-                {"iPad Air", "930000", "150"},
-                {"Apple Watch Ultra", "1150000", "70"},
-                {"Apple Watch SE", "350000", "200"},
-                {"AirPods Pro", "350000", "500"},
-                {"AirPods Max", "770000", "60"},
-                {"Galaxy S25 Ultra", "1350000", "250"},
-                {"Galaxy Book Pro", "1800000", "80"},
-                {"Galaxy Tab S10", "1100000", "120"},
-                {"Galaxy Buds Pro", "230000", "300"},
-                {"LG Gram 17", "1900000", "60"},
-                {"Sony WH-1000XM5", "450000", "150"},
-                {"Sony PS5 Pro", "800000", "40"},
-                {"Nintendo Switch 2", "550000", "100"},
-                {"Dyson Airwrap", "650000", "80"},
-                {"Logitech MX Master", "150000", "200"},
-                {"Logitech MX Keys", "130000", "200"},
-                {"Samsung Monitor 32", "550000", "90"},
-                {"LG Monitor 27", "480000", "110"},
-                {"Keychron K3 Pro", "140000", "150"},
-                {"Leopold FC750R", "180000", "100"},
-                {"Elgato Stream Deck", "200000", "70"},
-                {"Raspberry Pi 5", "120000", "200"},
-                {"Apple Magic Keyboard", "400000", "100"},
-                {"Apple Magic Trackpad", "180000", "120"},
+    private List<Product> seedProducts(List<Category> categories) {
+        // categories: [appleLaptop, otherLaptop, applePhone, androidPhone,
+        //              tablet, wearable, audio, gaming, monitor, keyboard, mouse]
+        //  index:       0            1           2            3
+        //               4       5          6       7        8       9        10
+
+        Object[][] productData = {
+                {"MacBook Pro 16", 3500000, 50, 0},      // Apple Laptop
+                {"MacBook Air 15", 1900000, 80, 0},
+                {"iMac 24", 2200000, 30, 0},
+                {"iPhone 16 Pro", 1550000, 200, 2},      // Apple Phone
+                {"iPhone 16", 1250000, 300, 2},
+                {"iPad Pro", 1730000, 100, 4},            // Tablet
+                {"iPad Air", 930000, 150, 4},
+                {"Apple Watch Ultra", 1150000, 70, 5},    // Wearable
+                {"Apple Watch SE", 350000, 200, 5},
+                {"AirPods Pro", 350000, 500, 6},          // Audio
+                {"AirPods Max", 770000, 60, 6},
+                {"Galaxy S25 Ultra", 1350000, 250, 3},    // Android Phone
+                {"Galaxy Book Pro", 1800000, 80, 1},      // Other Laptop
+                {"Galaxy Tab S10", 1100000, 120, 4},      // Tablet
+                {"Galaxy Buds Pro", 230000, 300, 6},      // Audio
+                {"LG Gram 17", 1900000, 60, 1},           // Other Laptop
+                {"Sony WH-1000XM5", 450000, 150, 6},     // Audio
+                {"Sony PS5 Pro", 800000, 40, 7},          // Gaming
+                {"Nintendo Switch 2", 550000, 100, 7},    // Gaming
+                {"Dyson Airwrap", 650000, 80, 5},         // Wearable (lifestyle)
+                {"Logitech MX Master", 150000, 200, 10},  // Mouse
+                {"Logitech MX Keys", 130000, 200, 9},     // Keyboard
+                {"Samsung Monitor 32", 550000, 90, 8},    // Monitor
+                {"LG Monitor 27", 480000, 110, 8},        // Monitor
+                {"Keychron K3 Pro", 140000, 150, 9},      // Keyboard
+                {"Leopold FC750R", 180000, 100, 9},       // Keyboard
+                {"Elgato Stream Deck", 200000, 70, 7},    // Gaming
+                {"Raspberry Pi 5", 120000, 200, 7},       // Gaming
+                {"Apple Magic Keyboard", 400000, 100, 9}, // Keyboard
+                {"Apple Magic Trackpad", 180000, 120, 10},// Mouse
         };
 
         List<Product> products = new ArrayList<>();
-        for (String[] data : productData) {
-            products.add(productRepository.save(
-                    Product.createProduct(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[2]))));
+        for (Object[] data : productData) {
+            Product product = Product.createProduct((String) data[0], (int) data[1], (int) data[2]);
+            categories.get((int) data[3]).addProduct(product);
+            products.add(productRepository.save(product));
         }
         return products;
     }
 
     private void seedOrders(List<Member> members, List<Product> products) {
         Random random = new Random(42);
+        String[] streets = {"123 Main St", "456 Oak Ave", "789 Pine Rd", "321 Elm Blvd", "654 Maple Dr"};
+        String[] cities = {"New York", "Los Angeles", "Chicago", "Houston", "Phoenix"};
+        String[] zips = {"10001", "90001", "60601", "77001", "85001"};
+        PaymentMethod[] methods = PaymentMethod.values();
 
         for (int i = 0; i < 300; i++) {
             Member member = members.get(random.nextInt(members.size()));
@@ -123,7 +167,16 @@ public class InitData implements CommandLineRunner {
             }
 
             if (!orderItems.isEmpty()) {
-                orderRepository.save(Order.createOrder(member, orderItems));
+                // Create delivery
+                int addrIdx = random.nextInt(streets.length);
+                Address address = new Address(zips[addrIdx], streets[addrIdx], cities[addrIdx]);
+                Delivery delivery = Delivery.createDelivery(member.getName(), "010-" + (1000 + random.nextInt(9000)) + "-" + (1000 + random.nextInt(9000)), address);
+
+                // Create payment
+                int totalPrice = orderItems.stream().mapToInt(OrderItem::getTotalPrice).sum();
+                Payment payment = Payment.createPayment(methods[random.nextInt(methods.length)], totalPrice);
+
+                orderRepository.save(Order.createOrder(member, orderItems, delivery, payment));
             }
         }
     }

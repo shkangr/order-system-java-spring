@@ -17,6 +17,8 @@ public class OrderResponse {
     private final LocalDateTime orderDate;
     private final int totalPrice;
     private final List<OrderItemResponse> orderItems;
+    private final DeliveryResponse delivery;
+    private final PaymentResponse payment;
 
     public OrderResponse(Order order) {
         this.orderId = order.getId();
@@ -27,6 +29,8 @@ public class OrderResponse {
         this.orderItems = order.getOrderItems().stream()
                 .map(OrderItemResponse::new)
                 .toList();
+        this.delivery = order.getDelivery() != null ? new DeliveryResponse(order.getDelivery()) : null;
+        this.payment = order.getPayment() != null ? new PaymentResponse(order.getPayment()) : null;
     }
 
     @Getter

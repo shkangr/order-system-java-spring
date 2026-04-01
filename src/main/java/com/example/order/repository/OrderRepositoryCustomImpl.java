@@ -11,9 +11,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import static com.example.order.domain.QDelivery.delivery;
 import static com.example.order.domain.QMember.member;
 import static com.example.order.domain.QOrder.order;
 import static com.example.order.domain.QOrderItem.orderItem;
+import static com.example.order.domain.QPayment.payment;
 import static com.example.order.domain.QProduct.product;
 
 @Repository
@@ -40,6 +42,8 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .join(order.member, member).fetchJoin()
                 .join(order.orderItems, orderItem).fetchJoin()
                 .join(orderItem.product, product).fetchJoin()
+                .leftJoin(order.delivery, delivery).fetchJoin()
+                .leftJoin(order.payment, payment).fetchJoin()
                 .where(order.id.eq(orderId))
                 .fetchOne();
 
@@ -53,6 +57,8 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .join(order.member, member).fetchJoin()
                 .join(order.orderItems, orderItem).fetchJoin()
                 .join(orderItem.product, product).fetchJoin()
+                .leftJoin(order.delivery, delivery).fetchJoin()
+                .leftJoin(order.payment, payment).fetchJoin()
                 .fetch();
     }
 
@@ -67,16 +73,16 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
 
     @Override
     public Page<Order> findAllWithMember(Pageable pageable) {
-        // Content query: fetch join Member (ToOne) + offset/limit
         List<Order> content = queryFactory
                 .selectFrom(order)
                 .join(order.member, member).fetchJoin()
+                .leftJoin(order.delivery, delivery).fetchJoin()
+                .leftJoin(order.payment, payment).fetchJoin()
                 .orderBy(order.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // Count query: separate for performance (no join needed)
         var countQuery = queryFactory
                 .select(order.count())
                 .from(order);

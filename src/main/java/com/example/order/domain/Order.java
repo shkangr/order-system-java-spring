@@ -27,6 +27,14 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "delivery_id")
+    private Delivery delivery;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "payment_id")
+    private Payment payment;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
@@ -49,14 +57,31 @@ public class Order {
         orderItem.assignOrder(this);
     }
 
+    public void setDelivery(Delivery delivery) {
+        this.delivery = delivery;
+        if (delivery != null) {
+            delivery.assignOrder(this);
+        }
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
+        if (payment != null) {
+            payment.assignOrder(this);
+        }
+    }
+
     // === Factory Method === //
 
-    public static Order createOrder(Member member, List<OrderItem> orderItems) {
+    public static Order createOrder(Member member, List<OrderItem> orderItems,
+                                    Delivery delivery, Payment payment) {
         Order order = new Order();
         order.setMember(member);
         for (OrderItem orderItem : orderItems) {
             order.addOrderItem(orderItem);
         }
+        order.setDelivery(delivery);
+        order.setPayment(payment);
         order.status = OrderStatus.ORDER;
         order.orderDate = LocalDateTime.now();
         return order;
@@ -65,15 +90,28 @@ public class Order {
     // === Business Logic === //
 
     /**
-     * Cancel order - restores stock
+     * Cancel order - restores stock, cancels delivery and payment
+     * Cannot cancel if delivery is already shipping or completed
      */
     public void cancel() {
         if (this.status == OrderStatus.CANCEL) {
             throw new IllegalStateException("Order is already cancelled.");
         }
+        if (this.delivery != null &&
+                (this.delivery.getStatus() == DeliveryStatus.SHIPPING ||
+                 this.delivery.getStatus() == DeliveryStatus.COMPLETED)) {
+            throw new IllegalStateException("Cannot cancel order. Delivery is already " + this.delivery.getStatus() + ".");
+        }
+
         this.status = OrderStatus.CANCEL;
         for (OrderItem orderItem : orderItems) {
             orderItem.cancel();
+        }
+        if (this.delivery != null && this.delivery.getStatus() == DeliveryStatus.READY) {
+            this.delivery.cancel();
+        }
+        if (this.payment != null && this.payment.getStatus() == PaymentStatus.PAID) {
+            this.payment.cancel();
         }
     }
 
