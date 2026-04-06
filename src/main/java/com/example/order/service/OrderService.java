@@ -38,7 +38,8 @@ public class OrderService {
 
         List<OrderItem> orderItems = new ArrayList<>();
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
-            Product product = productRepository.findById(itemRequest.getProductId())
+            // Pessimistic Lock: SELECT ... FOR UPDATE to prevent overselling
+            Product product = productRepository.findByIdWithLock(itemRequest.getProductId())
                     .orElseThrow(() -> new EntityNotFoundException("Product not found. id=" + itemRequest.getProductId()));
 
             OrderItem orderItem = OrderItem.createOrderItem(product, product.getPrice(), itemRequest.getCount());

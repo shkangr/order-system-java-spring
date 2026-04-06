@@ -19,7 +19,8 @@ public class DeliveryService {
     @Auditable(action = "START_SHIPPING")
     @Transactional
     public void startShipping(Long deliveryId) {
-        Delivery delivery = deliveryRepository.findById(deliveryId)
+        // Pessimistic Lock: prevents concurrent status transitions
+        Delivery delivery = deliveryRepository.findByIdWithLock(deliveryId)
                 .orElseThrow(() -> new EntityNotFoundException("Delivery not found. id=" + deliveryId));
         delivery.startShipping();
     }
@@ -27,7 +28,8 @@ public class DeliveryService {
     @Auditable(action = "COMPLETE_DELIVERY")
     @Transactional
     public void completeDelivery(Long deliveryId) {
-        Delivery delivery = deliveryRepository.findById(deliveryId)
+        // Pessimistic Lock: prevents concurrent status transitions
+        Delivery delivery = deliveryRepository.findByIdWithLock(deliveryId)
                 .orElseThrow(() -> new EntityNotFoundException("Delivery not found. id=" + deliveryId));
         delivery.complete();
     }

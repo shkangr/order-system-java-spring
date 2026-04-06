@@ -19,7 +19,8 @@ public class PaymentService {
     @Auditable(action = "APPROVE_PAYMENT")
     @Transactional
     public void approvePayment(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+        // Pessimistic Lock: prevents concurrent approve/fail
+        Payment payment = paymentRepository.findByIdWithLock(paymentId)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found. id=" + paymentId));
         payment.approve();
     }
@@ -27,7 +28,8 @@ public class PaymentService {
     @Auditable(action = "FAIL_PAYMENT")
     @Transactional
     public void failPayment(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+        // Pessimistic Lock: prevents concurrent approve/fail
+        Payment payment = paymentRepository.findByIdWithLock(paymentId)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found. id=" + paymentId));
         payment.fail();
     }
