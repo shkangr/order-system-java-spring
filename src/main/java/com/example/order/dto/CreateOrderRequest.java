@@ -40,6 +40,9 @@ public class CreateOrderRequest {
     @NotNull(message = "Payment method is required.")
     private String paymentMethod;
 
+    // Coupon (optional)
+    private Long memberCouponId;
+
     @Getter
     @NoArgsConstructor
     public static class OrderItemRequest {

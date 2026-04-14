@@ -1,16 +1,14 @@
 package com.example.order;
 
 import com.example.order.domain.*;
-import com.example.order.repository.CategoryRepository;
-import com.example.order.repository.MemberRepository;
-import com.example.order.repository.OrderRepository;
-import com.example.order.repository.ProductRepository;
+import com.example.order.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -24,6 +22,8 @@ public class InitData implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final CategoryRepository categoryRepository;
+    private final CouponRepository couponRepository;
+    private final MemberCouponRepository memberCouponRepository;
 
     @Override
     @Transactional
@@ -39,8 +39,9 @@ public class InitData implements CommandLineRunner {
         List<Member> members = seedMembers();
         List<Product> products = seedProducts(categories);
         seedOrders(members, products);
+        seedCoupons(members);
 
-        log.info("[InitData] Seed complete - {} categories, {} members, {} products, 300 orders",
+        log.info("[InitData] Seed complete - {} categories, {} members, {} products, 300 orders, coupons seeded",
                 categories.size(), members.size(), products.size());
     }
 
@@ -179,5 +180,40 @@ public class InitData implements CommandLineRunner {
                 orderRepository.save(Order.createOrder(member, orderItems, delivery, payment));
             }
         }
+    }
+
+    private void seedCoupons(List<Member> members) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Active coupons
+        Coupon welcome = Coupon.createCoupon("Welcome 10% Off", DiscountType.RATE, 10,
+                1000, now.minusDays(30), now.plusDays(60), 10000);
+        Coupon spring = Coupon.createCoupon("Spring Sale 5000 Off", DiscountType.FIXED, 5000,
+                500, now.minusDays(7), now.plusDays(30), 30000);
+        Coupon vip = Coupon.createCoupon("VIP 20% Off", DiscountType.RATE, 20,
+                100, now.minusDays(1), now.plusDays(90), 50000);
+        Coupon flash = Coupon.createCoupon("Flash Sale 15% Off", DiscountType.RATE, 15,
+                50, now, now.plusHours(24), 20000);
+
+        // Expired coupon
+        Coupon expired = Coupon.createCoupon("Expired Coupon", DiscountType.FIXED, 3000,
+                200, now.minusDays(60), now.minusDays(1), 10000);
+
+        couponRepository.saveAll(List.of(welcome, spring, vip, flash, expired));
+
+        // Issue coupons to first 10 members
+        Random random = new Random(42);
+        List<Coupon> activeCoupons = List.of(welcome, spring, vip, flash);
+        for (int i = 0; i < 10; i++) {
+            Member member = members.get(i);
+            for (Coupon coupon : activeCoupons) {
+                if (random.nextBoolean()) {
+                    coupon.issue();
+                    memberCouponRepository.save(MemberCoupon.issue(member, coupon));
+                }
+            }
+        }
+
+        log.info("[InitData] Coupons seeded - 5 coupons, issued to first 10 members");
     }
 }

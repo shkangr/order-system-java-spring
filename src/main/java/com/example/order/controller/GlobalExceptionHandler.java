@@ -4,6 +4,7 @@ import com.example.order.exception.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -45,6 +46,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException e) {
         log.warn("[IllegalState] {}", e.getMessage());
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    /**
+     * Optimistic Lock conflict (concurrent coupon update)
+     * -> 409 Conflict with retry hint
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
+        log.warn("[OptimisticLock] {}", e.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, "Data was modified by another user. Please retry.");
     }
 
     /**

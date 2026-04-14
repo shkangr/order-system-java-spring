@@ -13,7 +13,7 @@ import java.util.List;
 @Table(name = "orders") // 'order' is a SQL reserved word
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Order {
+public class Order extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,6 +39,10 @@ public class Order {
     private OrderStatus status;
 
     private LocalDateTime orderDate;
+
+    private Long memberCouponId;
+
+    private int discountAmount;
 
     // === Bidirectional Convenience Methods === //
 
@@ -75,6 +79,12 @@ public class Order {
 
     public static Order createOrder(Member member, List<OrderItem> orderItems,
                                     Delivery delivery, Payment payment) {
+        return createOrder(member, orderItems, delivery, payment, null, 0);
+    }
+
+    public static Order createOrder(Member member, List<OrderItem> orderItems,
+                                    Delivery delivery, Payment payment,
+                                    Long memberCouponId, int discountAmount) {
         Order order = new Order();
         order.setMember(member);
         for (OrderItem orderItem : orderItems) {
@@ -82,6 +92,8 @@ public class Order {
         }
         order.setDelivery(delivery);
         order.setPayment(payment);
+        order.memberCouponId = memberCouponId;
+        order.discountAmount = discountAmount;
         order.status = OrderStatus.ORDER;
         order.orderDate = LocalDateTime.now();
         return order;

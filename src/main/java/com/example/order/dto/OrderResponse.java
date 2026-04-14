@@ -16,6 +16,8 @@ public class OrderResponse {
     private final OrderStatus status;
     private final LocalDateTime orderDate;
     private final int totalPrice;
+    private final int discountAmount;
+    private final Long memberCouponId;
     private final List<OrderItemResponse> orderItems;
     private final DeliveryResponse delivery;
     private final PaymentResponse payment;
@@ -26,6 +28,8 @@ public class OrderResponse {
         this.status = order.getStatus();
         this.orderDate = order.getOrderDate();
         this.totalPrice = order.getTotalPrice();
+        this.discountAmount = order.getDiscountAmount();
+        this.memberCouponId = order.getMemberCouponId();
         this.orderItems = order.getOrderItems().stream()
                 .map(OrderItemResponse::new)
                 .toList();
