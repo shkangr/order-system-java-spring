@@ -1,5 +1,6 @@
 package com.example.order.service;
 
+import com.example.order.config.DistributedLockExecutor;
 import com.example.order.config.annotation.Auditable;
 import com.example.order.domain.*;
 import com.example.order.dto.*;
@@ -15,6 +16,8 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.concurrent.TimeUnit;
+
 import java.util.List;
 
 @Slf4j
@@ -26,9 +29,12 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final MemberCouponRepository memberCouponRepository;
     private final MemberRepository memberRepository;
+    private final CouponRedisService couponRedisService;
+    private final DistributedLockExecutor distributedLockExecutor;
 
     /**
      * Create a new coupon policy.
+     * Also initializes coupon remaining count in Redis for fast pre-filtering.
      */
     @Transactional
     public Long createCoupon(CreateCouponRequest request) {
@@ -42,6 +48,10 @@ public class CouponService {
                 request.getMinOrderAmount()
         );
         couponRepository.save(coupon);
+
+        // Sync to Redis: remaining = totalQuantity (issuedCount is 0 for new coupon)
+        couponRedisService.syncCoupon(coupon.getId(), coupon.getTotalQuantity(), 0);
+
         return coupon.getId();
     }
 
@@ -62,13 +72,38 @@ public class CouponService {
 
     /**
      * Issue coupon to a member.
-     * Uses Pessimistic Lock to prevent over-issuance in high-concurrency scenarios
-     * (e.g., flash sale: 100 coupons, 1000 concurrent requests).
+     *
+     * Three layers of protection:
+     *   1. Redis DECR — fast pre-filter, rejects sold-out requests without touching DB
+     *   2. Redisson Distributed Lock — serializes per couponId, prevents DB connection flood
+     *   3. DB Pessimistic Lock — final source-of-truth guarantee
+     *
+     * For a flash sale (100 coupons, 10,000 concurrent requests):
+     *   - Without Redis: 10,000 requests hit DB, 9,900 wait on row lock
+     *   - With Redis: ~100 pass Redis filter → ~100 acquire distributed lock → DB confirms
      */
     @Auditable(action = "ISSUE_COUPON")
     @Transactional
     public Long issueCoupon(Long couponId, Long memberId) {
-        // Pessimistic Lock: SELECT ... FOR UPDATE on coupon row
+        // Layer 1: Redis atomic counter — reject sold-out instantly
+        if (!couponRedisService.decrementCoupon(couponId)) {
+            throw new IllegalStateException("Coupon is sold out (filtered by Redis).");
+        }
+
+        try {
+            // Layer 2: Distributed Lock — one thread per couponId at a time
+            return distributedLockExecutor.execute(
+                    "lock:coupon:issue:" + couponId, 5, 3, TimeUnit.SECONDS,
+                    () -> doIssueCoupon(couponId, memberId));
+        } catch (Exception e) {
+            // Redis counter was decremented but issuance failed — restore
+            couponRedisService.restoreCoupon(couponId);
+            throw e;
+        }
+    }
+
+    private Long doIssueCoupon(Long couponId, Long memberId) {
+        // Layer 3: DB Pessimistic Lock — final guarantee
         Coupon coupon = couponRepository.findByIdWithLock(couponId)
                 .orElseThrow(() -> new EntityNotFoundException("Coupon not found. id=" + couponId));
 

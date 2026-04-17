@@ -11,6 +11,14 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7.4
+    container_name: order-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
   kafka:
     image: apache/kafka:3.9.0
     container_name: order-kafka
@@ -32,4 +40,5 @@ services:
 
 volumes:
   postgres-data:
+  redis-data:
   kafka-data:

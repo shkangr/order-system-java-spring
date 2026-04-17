@@ -2,9 +2,12 @@ package com.example.order;
 
 import com.example.order.domain.*;
 import com.example.order.repository.*;
+import com.example.order.service.CouponRedisService;
+import com.example.order.service.StockRedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,9 @@ public class InitData implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final CouponRepository couponRepository;
     private final MemberCouponRepository memberCouponRepository;
+    private final StockRedisService stockRedisService;
+    private final CouponRedisService couponRedisService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -40,6 +46,10 @@ public class InitData implements CommandLineRunner {
         List<Product> products = seedProducts(categories);
         seedOrders(members, products);
         seedCoupons(members);
+
+        // Sync stock and coupon counts to Redis
+        stockRedisService.syncAllFromDb();
+        couponRedisService.syncAllFromDb();
 
         log.info("[InitData] Seed complete - {} categories, {} members, {} products, 300 orders, coupons seeded",
                 categories.size(), members.size(), products.size());
@@ -87,12 +97,19 @@ public class InitData implements CommandLineRunner {
                               "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Moore", "Clark", "Lewis",
                               "Walker", "Hall", "Allen", "Young", "King", "Wright", "Scott", "Adams", "Baker", "Nelson"};
 
+        String encodedPassword = passwordEncoder.encode("password123");
+
         List<Member> members = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             String name = firstNames[i] + " " + lastNames[i];
             String email = firstNames[i].toLowerCase() + "." + lastNames[i].toLowerCase() + "@example.com";
-            members.add(memberRepository.save(Member.createMember(name, email)));
+            // First 2 members are ADMIN, rest are USER
+            Role role = (i < 2) ? Role.ADMIN : Role.USER;
+            members.add(memberRepository.save(
+                    Member.createMember(name, email, encodedPassword, role)));
         }
+
+        log.info("[InitData] Admin accounts: james.smith@example.com, emma.johnson@example.com (password: password123)");
         return members;
     }
 

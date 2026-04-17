@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -71,6 +73,26 @@ public class GlobalExceptionHandler {
 
         log.warn("[Validation] {}", message);
         return buildResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
+    /**
+     * Authentication failure (bad credentials)
+     * -> 401 Unauthorized
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e) {
+        log.warn("[Auth] Bad credentials: {}", e.getMessage());
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+    }
+
+    /**
+     * Authorization failure (insufficient role)
+     * -> 403 Forbidden
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e) {
+        log.warn("[Auth] Access denied: {}", e.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, "Access denied. Insufficient permissions.");
     }
 
     /**

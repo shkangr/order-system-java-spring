@@ -2,6 +2,7 @@ package com.example.order.event;
 
 import com.example.order.domain.MemberCoupon;
 import com.example.order.repository.MemberCouponRepository;
+import com.example.order.service.CouponRedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class CouponEventListener {
 
     private final MemberCouponRepository memberCouponRepository;
+    private final CouponRedisService couponRedisService;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrderCancelled(OrderCancelledEvent event) {
@@ -42,7 +44,10 @@ public class CouponEventListener {
         memberCoupon.restore();
         memberCoupon.getCoupon().restoreQuantity();
 
-        log.info("[CouponEvent] Coupon restored. memberCouponId={}, coupon={}",
+        // Restore coupon count in Redis to keep cache in sync
+        couponRedisService.restoreCoupon(memberCoupon.getCoupon().getId());
+
+        log.info("[CouponEvent] Coupon restored (DB + Redis). memberCouponId={}, coupon={}",
                 memberCoupon.getId(), memberCoupon.getCoupon().getName());
     }
 }
